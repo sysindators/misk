@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: MIT
 
 # set up based on this: https://thucnc.medium.com/how-to-publish-your-own-python-package-to-pypi-4318868210f9
+# windows:
+# py setup.py sdist bdist_wheel && twine upload dist/* && rmdir /S /Q dist
 
 from setuptools import setup, find_packages
 
@@ -16,7 +18,7 @@ with open('README.md', encoding='utf-8') as file:
 
 setup_args = dict(
 	name=r'misk',
-	version=r'0.1.1',
+	version=r'0.1.3',
 	description=r'Miscellaneous useful bits for python 3.',
 	long_description_content_type=r'text/markdown',
 	long_description=README, # + r'\n\n' + HISTORY,

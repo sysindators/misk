@@ -20,7 +20,7 @@ class ScopeTimer(object):
 	def __enter__(self):
 		self.__start = _time.perf_counter_ns()
 		if self.__print_start:
-			self.__print_func(self.__scope)
+			self.__print_func(self.__description)
 
 	def __exit__(self ,type, value, traceback):
 		if traceback is None:

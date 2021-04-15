@@ -5,4 +5,4 @@
 # SPDX-License-Identifier: MIT
 
 from .functions import *
-from .scope_timer import *
+from .timers import *

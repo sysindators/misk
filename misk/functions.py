@@ -12,8 +12,8 @@ import hashlib as _hashlib
 import logging as _logging
 import traceback as _traceback
 import subprocess as _subprocess
+import io as _io
 from pathlib import Path as _Path
-from io import StringIO
 
 
 
@@ -26,13 +26,6 @@ class _State(object):
 	def __init__(self):
 		self.entry_script_dir = _Path(_sys.argv[0]).resolve().parent
 		self.python = 'py' if _shutil.which('py') is not None else 'python3'
-		self.logger = _logging.getLogger(__name__)
-		self.logger.setLevel(_logging.INFO)
-
-
-
-	def __call__(self, msg):
-		self.logger.info(msg)
 
 
 
@@ -45,22 +38,22 @@ def _state():
 
 
 
-def _log(msg):
-	return _state().logger.info(msg)
-
-
-
 #=======================================================================================================================
 # functions
 #=======================================================================================================================
 
-
-
-def add_log_handler(log_handler):
-	'''
-	Adds a log handler to the internal logger instance used by misk.
-	'''
-	_state().logger.addHandler(log_handler)
+def _log(logger, msg, level=_logging.INFO):
+	if logger is None or msg is None:
+		return
+	if isinstance(logger, bool):
+		if logger:
+			print(msg, file=_sys.stderr if level >= _logging.WARNING else _sys.stdout)
+	elif isinstance(logger, _logging.Logger):
+		logger.log(level, msg)
+	elif isinstance(logger, _io.IOBase):
+		print(msg, file=logger)
+	else:
+		logger(msg)
 
 
 
@@ -74,25 +67,25 @@ def is_collection(val):
 
 
 
-def print_exception(exc, file=_sys.stderr, include_type=False, include_traceback=False, skip_frames=0):
+def print_exception(exc, logger=_sys.stderr, include_type=False, include_traceback=False, skip_frames=0):
 	'''
 	Pretty-prints an exception with optional traceback.
 	'''
 	if isinstance(exc, AssertionError):
 		include_type=True
 		include_traceback=True
-	buf = StringIO()
-	print(rf'Error: ', file=buf, end='')
-	if include_type:
-		print(rf'[{type(exc).__name__}] ', file=buf, end='')
-	print(str(exc), file=buf)
-	if include_traceback:
-		tb = exc.__traceback__
-		while skip_frames > 0 and tb.tb_next is not None:
-			skip_frames = skip_frames - 1
-			tb = tb.tb_next
-		_traceback.print_exception(type(exc), exc, tb, file=buf)
-	print(buf.getvalue(),file=file, end='')
+	with _io.StringIO() as buf:
+		print(rf'Error: ', file=buf, end='')
+		if include_type:
+			print(rf'[{type(exc).__name__}] ', file=buf, end='')
+		print(str(exc), file=buf, end='')
+		if include_traceback:
+			tb = exc.__traceback__
+			while skip_frames > 0 and tb.tb_next is not None:
+				skip_frames = skip_frames - 1
+				tb = tb.tb_next
+			_traceback.print_exception(type(exc), exc, tb, file=buf)
+		_log(logger, buf.getvalue(), level=_logging.ERROR)
 
 
 
@@ -104,11 +97,14 @@ def entry_script_dir():
 
 
 
-def _coerce_path(path):
-	assert path is not None
-	if not isinstance(path, _Path):
-		path = _Path(str(path))
-	return path
+def _coerce_path(arg, *args):
+	assert arg is not None
+	if args is not None and len(args):
+		return _Path(str(arg), *[str(a) for a in args])
+	else:
+		if not isinstance(arg, _Path):
+			arg = _Path(str(arg))
+		return arg
 
 
 
@@ -132,7 +128,7 @@ def assert_existing_directory(path):
 
 
 
-def delete_directory(path):
+def delete_directory(path, logger=None):
 	'''
 	Deletes a directory (and all its contents).
 	'''
@@ -140,36 +136,36 @@ def delete_directory(path):
 	if path.exists():
 		if not path.is_dir():
 			raise Exception(rf'{path} was not a directory')
-		_log(rf'Deleting {path}')
+		_log(logger, rf'Deleting {path}')
 		_shutil.rmtree(str(path.resolve()))
 
 
 
-def copy_file(source, dest):
+def copy_file(source, dest, logger=None):
 	'''
 	Copies a single file.
 	'''
 	source = _coerce_path(source)
 	dest = _coerce_path(dest)
 	assert_existing_file(source)
-	_log(rf'Copying {source} to {dest}')
+	_log(logger, rf'Copying {source} to {dest}')
 	_shutil.copy(str(source), str(dest))
 
 
 
-def move_file(source, dest):
+def move_file(source, dest, logger=None):
 	'''
 	Moves a single file.
 	'''
 	source = _coerce_path(source)
 	dest = _coerce_path(dest)
 	assert_existing_file(source)
-	_log(rf'Moving {source} to {dest}')
+	_log(logger, rf'Moving {source} to {dest}')
 	_shutil.move(str(source), str(dest))
 
 
 
-def delete_file(path):
+def delete_file(path, logger=None):
 	'''
 	Deletes a single file.
 	'''
@@ -177,7 +173,7 @@ def delete_file(path):
 	if path.exists():
 		if not path.is_file():
 			raise Exception(rf'{path} was not a file')
-		_log(rf'Deleting {path}')
+		_log(logger, rf'Deleting {path}')
 		path.unlink()
 
 
@@ -225,7 +221,7 @@ def get_all_files(path, all=None, any=None, recursive=False, sort=True):
 
 
 
-def read_all_text_from_file(path, fallback_url=None, encoding='utf-8'):
+def read_all_text_from_file(path, fallback_url=None, encoding='utf-8', logger=None):
 	'''
 	Reads all the text from a file, optionally downloading it if the file did not exist on disk or a read error occured.
 	'''
@@ -233,13 +229,13 @@ def read_all_text_from_file(path, fallback_url=None, encoding='utf-8'):
 	if fallback_url is None:
 		assert_existing_file(path)
 	try:
-		_log(rf'Reading {path}')
+		_log(logger, rf'Reading {path}')
 		with open(path, 'r', encoding=encoding) as f:
 			text = f.read()
 		return text
 	except:
 		if fallback_url is not None:
-			_log(rf"Couldn't read file locally, downloading from {fallback_url}")
+			_log(logger, rf"Couldn't read file locally, downloading from {fallback_url}")
 			response = _requests.get(
 				fallback_url,
 				timeout=1
