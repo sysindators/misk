@@ -113,7 +113,7 @@ def assert_existing_file(path):
 	Asserts that a path represents an existing file on disk.
 	'''
 	path = _coerce_path(path)
-	if not path.exists() and path.is_file():
+	if not path.exists() or not path.is_file():
 		raise Exception(rf'{path} did not exist or was not a file')
 
 
@@ -123,7 +123,7 @@ def assert_existing_directory(path):
 	Asserts that a path represents an existing directory on disk.
 	'''
 	path = _coerce_path(path)
-	if not path.exists() and path.is_dir():
+	if not path.exists() or not path.is_dir():
 		raise Exception(f'{path} did not exist or was not a directory')
 
 
