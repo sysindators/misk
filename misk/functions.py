@@ -71,7 +71,7 @@ def print_exception(exc, logger=_sys.stderr, include_type=False, include_traceba
 	'''
 	Pretty-prints an exception with optional traceback.
 	'''
-	if isinstance(exc, AssertionError):
+	if isinstance(exc, (AssertionError, NameError)):
 		include_type=True
 		include_traceback=True
 	with _io.StringIO() as buf:
