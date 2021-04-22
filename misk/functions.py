@@ -75,16 +75,17 @@ def print_exception(exc, logger=_sys.stderr, include_type=False, include_traceba
 		include_type=True
 		include_traceback=True
 	with _io.StringIO() as buf:
-		print(rf'Error: ', file=buf, end='')
-		if include_type:
-			print(rf'[{type(exc).__name__}] ', file=buf, end='')
-		print(str(exc), file=buf, end='')
 		if include_traceback:
 			tb = exc.__traceback__
 			while skip_frames > 0 and tb.tb_next is not None:
 				skip_frames = skip_frames - 1
 				tb = tb.tb_next
 			_traceback.print_exception(type(exc), exc, tb, file=buf)
+		else:
+			print(rf'Error: ', file=buf, end='')
+			if include_type:
+				print(rf'[{type(exc).__name__}] ', file=buf, end='')
+			print(str(exc), file=buf, end='')
 		_log(logger, buf.getvalue(), level=_logging.ERROR)
 
 
@@ -180,9 +181,9 @@ def delete_file(path, logger=None):
 
 def get_all_files(path, all=None, any=None, recursive=False, sort=True):
 	'''
-	Collects all files in a directory matching some filters.
+	Collects all files in a directory matching some filename filters.
 	'''
-	path = _coerce_path(path)
+	path = _coerce_path(path).resolve()
 	if not path.exists():
 		return []
 	if not path.is_dir():
@@ -195,7 +196,7 @@ def get_all_files(path, all=None, any=None, recursive=False, sort=True):
 			if recursive:
 				child_files = child_files + get_all_files(p, all=all, any=any, recursive=True, sort=False)
 		elif p.is_file():
-			files.append(str(p))
+			files.append(str(p.name))
 
 	if files and all is not None:
 		if not is_collection(all):
@@ -214,7 +215,7 @@ def get_all_files(path, all=None, any=None, recursive=False, sort=True):
 				results.update(_fnmatch.filter(files, fil))
 			files = [f for f in results]
 
-	files = [_Path(f) for f in files] + child_files
+	files = [_Path(path, f) for f in files] + child_files
 	if sort:
 		files.sort()
 	return files

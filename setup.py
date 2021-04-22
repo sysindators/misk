@@ -18,7 +18,7 @@ with open('README.md', encoding='utf-8') as file:
 
 setup_args = dict(
 	name=r'misk',
-	version=r'0.3.0',
+	version=r'0.4.0',
 	description=r'Miscellaneous useful bits for python 3.',
 	long_description_content_type=r'text/markdown',
 	long_description=README, # + r'\n\n' + HISTORY,
