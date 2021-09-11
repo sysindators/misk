@@ -13,6 +13,7 @@ import logging as _logging
 import traceback as _traceback
 import subprocess as _subprocess
 import io as _io
+import re as _re
 from pathlib import Path as _Path
 
 
@@ -71,7 +72,7 @@ def print_exception(exc, logger=_sys.stderr, include_type=False, include_traceba
 	'''
 	Pretty-prints an exception with optional traceback.
 	'''
-	if isinstance(exc, (AssertionError, NameError)):
+	if isinstance(exc, (AssertionError, NameError, TypeError)):
 		include_type=True
 		include_traceback=True
 	with _io.StringIO() as buf:
@@ -316,3 +317,36 @@ def next_pow2(n):
 	while n & (n - 1) > 0:
 		n &= (n - 1)
 	return n << 1
+
+
+
+def replace_metavar(name, repl, text):
+	'''
+	Replaces named meta variables in strings. Meta variables can be in any of the following formats:
+	   - {% name %}
+	   - $( name )
+	   - %( name )
+
+	Meta variable names are case sensitive.
+
+	Whitespace inside the meta variables is ignored (i.e. {%name%} matches the same as {% name %}).
+	'''
+	assert name is not None
+	assert repl is not None
+	assert text is not None
+
+	if not isinstance(name, str):
+		name = str(name)
+	name = _re.escape(name.strip())
+	if not isinstance(repl, str):
+		repl = str(repl)
+	if not isinstance(text, str):
+		text = str(text)
+
+	#  {% name %}
+	text = _re.sub(rf'{{%[\t ]*{name}[\t ]*%}}', repl, text)
+
+	#  $( name ) and %( name )
+	text = _re.sub(rf'[$%]\([\t ]*{name}[\t ]*\)', repl, text)
+
+	return text
