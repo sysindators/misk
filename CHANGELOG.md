@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.6.1 - 2022-08-13
+- Fixed typos in in `print_exception()`
+
 ## v0.6.0 - 2022-05-08
 - Added `coerce_collection()`
 - Added `coerce_path()`

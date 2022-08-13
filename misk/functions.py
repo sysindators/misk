@@ -82,16 +82,16 @@ def coerce_collection(val) -> Union[list, tuple, dict, set, range]:
 
 
 __all__.append(r'print_exception')
-def print_exception(exc, logger=sys.stderr, include_type=False, includetraceback=False, skip_frames=0):
+def print_exception(exc, logger=sys.stderr, include_type=False, include_traceback=False, skip_frames=0):
 	'''
 	Pretty-prints an exception with optional traceback.
 	'''
 	if isinstance(exc, (AssertionError, NameError, TypeError)):
 		include_type=True
-		includetraceback=True
+		include_traceback=True
 	with io.StringIO() as buf:
-		if includetraceback:
-			tb = exc._traceback__
+		if include_traceback:
+			tb = exc.__traceback__
 			while skip_frames > 0 and tb.tb_next is not None:
 				skip_frames = skip_frames - 1
 				tb = tb.tb_next
