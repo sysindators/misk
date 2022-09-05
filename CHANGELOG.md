@@ -1,7 +1,13 @@
 # Changelog
 
+## v0.7.0 - 2022-09-05
+- Added `none` filter to `enumerate_files()`
+- Added `tabify()`
+- Added `untabify()`
+- Added `reindent()`
+
 ## v0.6.1 - 2022-08-13
-- Fixed typos in in `print_exception()`
+- Fixed typos in `print_exception()`
 
 ## v0.6.0 - 2022-05-08
 - Added `coerce_collection()`

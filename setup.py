@@ -20,7 +20,7 @@ with open('CHANGELOG.md', encoding='utf-8') as file:
 
 setup_args = dict(
 	name=r'misk',
-	version=r'0.6.1',
+	version=r'0.7.0',
 	description=r'Miscellaneous useful bits for python 3.',
 	long_description_content_type=r'text/markdown',
 	long_description=f'{README}\n\n{CHANGELOG}'.strip(),

@@ -206,7 +206,7 @@ def delete_file(path, logger=None):
 
 
 __all__.append(r'enumerate_files')
-def enumerate_files(root, all=None, any=None, recursive=False, sort=True) -> List[pathlib.Path]:
+def enumerate_files(root, all=None, any=None, none=None, recursive=False, sort=True) -> List[pathlib.Path]:
 	'''
 	Collects all files in a directory matching some filename filters.
 	'''
@@ -221,26 +221,36 @@ def enumerate_files(root, all=None, any=None, recursive=False, sort=True) -> Lis
 	for p in root.iterdir():
 		if p.is_dir():
 			if recursive:
-				child_files = child_files + enumerate_files(p, all=all, any=any, recursive=True, sort=False)
+				child_files = child_files + enumerate_files(p, all=all, any=any, none=none, recursive=True, sort=False)
 		elif p.is_file():
 			files.append(str(p.name))
 
+	# keep files matching the 'all' filter
 	if files and all is not None:
-		if not is_collection(all):
-			all = (all,)
+		all = coerce_collection(all)
 		all = [f for f in all if f is not None]
 		for fil in all:
 			files = fnmatch.filter(files, fil)
 
+	# keep files matching the 'any' filter
 	if files and any is not None:
-		if not is_collection(any):
-			any = (any,)
+		any = coerce_collection(any)
 		any = [f for f in any if f is not None]
 		if any:
-			results = set()
+			includes = set()
 			for fil in any:
-				results.update(fnmatch.filter(files, fil))
-			files = [f for f in results]
+				includes.update(fnmatch.filter(files, fil))
+			files = [f for f in includes]
+
+	# eliminate files matching the 'none' filter
+	if files and none is not None:
+		none = coerce_collection(none)
+		none = [f for f in none if f is not None]
+		if none:
+			excludes = set()
+			for fil in none:
+				excludes.update(fnmatch.filter(files, fil))
+			files = [f for f in files if f not in excludes]
 
 	files = [Path(root, f) for f in files] + child_files
 	if sort:
@@ -414,3 +424,83 @@ def replace_metavar(name, repl, text) -> str:
 	text = re.sub(rf'[$%]\([\t ]*{name}[\t ]*\)', repl, text)
 
 	return text
+
+
+
+def _tabify_replace_range(s, start, length, replacement) -> str:
+	assert isinstance(s, str)
+	assert isinstance(replacement, str)
+	assert start >= 0
+	assert length > 0
+	assert start+length <= len(s)
+	return rf'{s[:start]}{replacement}{s[start+length:]}'
+
+def _tabify_count_preceeding_spaces(s, start, tab_width) -> str:
+	spaces = 0
+	for i in range(tab_width):
+		if s[start-i-1] != ' ':
+			break
+		spaces += 1
+	return spaces
+
+
+
+__all__.append(r'tabify')
+def tabify(s, tab_width=4) -> str:
+	'''
+	Replaces spaces with tabs.
+	'''
+	if not isinstance(s, str):
+		s = str(s)
+	i = (len(s) - (len(s) % tab_width)) - tab_width
+	while i >= 0:
+		spaces = _tabify_count_preceeding_spaces(s, i+tab_width, tab_width)
+		if spaces > 1:
+			s = _tabify_replace_range(s, i+(tab_width-spaces), spaces, '\t')
+		i -= tab_width
+	return s
+
+
+
+__all__.append(r'untabify')
+def untabify(s, tab_width=4) -> str:
+	'''
+	Replaces tabs with spaces.
+	'''
+	if not isinstance(s, str):
+		s = str(s)
+	i = s.find('\t')
+	while i != -1:
+		spaces = tab_width - (i % tab_width)
+		s = _tabify_replace_range(s, i, 1, ' '*spaces)
+		i = s.find('\t', i + spaces - 1)
+	return s
+
+
+
+__all__.append(r'reindent')
+def reindent(s, indent='\t', tab_width=4) -> str:
+	'''
+	Re-indents a block of text.
+	'''
+	if not isinstance(s, str):
+		s = str(s)
+
+	if not isinstance(indent, str):
+		indent = str(indent)
+	indent = untabify(indent, tab_width=tab_width)
+
+	lstrip = 9999999999999999
+	s = [untabify(ss, tab_width) for ss in s.splitlines()]
+	for i in range(len(s)):
+		stripped = s[i].lstrip();
+		if not stripped:
+			s[i] = ''
+			continue
+		lstrip = min(len(s[i]) - len(stripped), lstrip)
+
+	for i in range(len(s)):
+		if s[i]:
+			s[i] = tabify(indent + s[i][lstrip:], tab_width=tab_width)
+
+	return '\n'.join(s)
