@@ -4,25 +4,53 @@
 # See https://github.com/marzer/misk/blob/master/LICENSE.txt for the full license text.
 # SPDX-License-Identifier: MIT
 
-import sys
-import shutil
 import fnmatch
-import requests
 import hashlib
-import logging
-import traceback
-import subprocess
 import io
-import re
+import logging
 import pathlib
+import re
+import shutil
+import subprocess
+import sys
+import traceback
 from pathlib import Path
 from typing import List, Union
 
-__all__ = []
+import requests
+
+__all__ = [
+	r'is_collection',
+	r'coerce_collection',
+	r'print_exception',
+	r'entry_script_dir',
+	r'coerce_path',
+	r'assert_existing_file',
+	r'assert_existing_directory',
+	r'delete_directory',
+	r'copy_file',
+	r'move_file',
+	r'delete_file',
+	r'enumerate_files',
+	r'get_all_files',
+	r'enumerate_directories',
+	r'read_all_text_from_file',
+	r'run_python_script',
+	r'sha1',
+	r'sha256',
+	r'is_pow2',
+	r'next_pow2',
+	r'replace_metavar',
+	r'tabify',
+	r'untabify',
+	r'reindent',
+]
 
 #=======================================================================================================================
 # shared lib state
 #=======================================================================================================================
+
+
 
 class _State(object):
 
@@ -33,6 +61,9 @@ class _State(object):
 
 
 __state = None
+
+
+
 def _state() -> _State:
 	global __state
 	if __state is None:
@@ -44,6 +75,8 @@ def _state() -> _State:
 #=======================================================================================================================
 # functions
 #=======================================================================================================================
+
+
 
 def _log(logger, msg, level=logging.INFO):
 	if logger is None or msg is None:
@@ -60,7 +93,6 @@ def _log(logger, msg, level=logging.INFO):
 
 
 
-__all__.append(r'is_collection')
 def is_collection(val) -> bool:
 	'''
 	Returns true if an object is an instance of one of the python built-in iterable collections.
@@ -69,26 +101,26 @@ def is_collection(val) -> bool:
 		return True
 	return False
 
-__all__.append(r'coerce_collection')
+
+
 def coerce_collection(val) -> Union[list, tuple, dict, set, range]:
 	'''
 	Returns the input if it already satisfies is_collection(), otherwise returns the input boxed into a tuple.
 	'''
 	assert val is not None
 	if not is_collection(val):
-		val = ( val, )
+		val = (val, )
 	return val
 
 
 
-__all__.append(r'print_exception')
 def print_exception(exc, logger=sys.stderr, include_type=False, include_traceback=False, skip_frames=0):
 	'''
 	Pretty-prints an exception with optional traceback.
 	'''
 	if isinstance(exc, (AssertionError, NameError, TypeError)):
-		include_type=True
-		include_traceback=True
+		include_type = True
+		include_traceback = True
 	with io.StringIO() as buf:
 		if include_traceback:
 			tb = exc.__traceback__
@@ -105,7 +137,6 @@ def print_exception(exc, logger=sys.stderr, include_type=False, include_tracebac
 
 
 
-__all__.append(r'entry_script_dir')
 def entry_script_dir() -> pathlib.Path:
 	'''
 	Returns a pathlib.Path representing the directory of the script used to enter the python process.
@@ -114,7 +145,6 @@ def entry_script_dir() -> pathlib.Path:
 
 
 
-__all__.append(r'coerce_path')
 def coerce_path(arg, *args) -> pathlib.Path:
 	'''
 	Buildes path from one or more inputs.
@@ -129,7 +159,6 @@ def coerce_path(arg, *args) -> pathlib.Path:
 
 
 
-__all__.append(r'assert_existing_file')
 def assert_existing_file(path):
 	'''
 	Asserts that a path represents an existing file on disk.
@@ -140,7 +169,6 @@ def assert_existing_file(path):
 
 
 
-__all__.append(r'assert_existing_directory')
 def assert_existing_directory(path):
 	'''
 	Asserts that a path represents an existing directory on disk.
@@ -151,7 +179,6 @@ def assert_existing_directory(path):
 
 
 
-__all__.append(r'delete_directory')
 def delete_directory(path, logger=None):
 	'''
 	Deletes a directory (and all its contents).
@@ -165,7 +192,6 @@ def delete_directory(path, logger=None):
 
 
 
-__all__.append(r'copy_file')
 def copy_file(source, dest, logger=None):
 	'''
 	Copies a single file.
@@ -174,11 +200,12 @@ def copy_file(source, dest, logger=None):
 	dest = coerce_path(dest)
 	assert_existing_file(source)
 	_log(logger, rf'Copying {source} to {dest}')
-	shutil.copy(str(source), str(dest))
+	shutil.copy(str(source), str(dest), follow_symlinks=True)
+	if (source.is_file() and dest.is_file()):
+		shutil.copymode(str(source), str(dest), follow_symlinks=True)
 
 
 
-__all__.append(r'move_file')
 def move_file(source, dest, logger=None):
 	'''
 	Moves a single file.
@@ -191,7 +218,6 @@ def move_file(source, dest, logger=None):
 
 
 
-__all__.append(r'delete_file')
 def delete_file(path, logger=None):
 	'''
 	Deletes a single file.
@@ -205,7 +231,6 @@ def delete_file(path, logger=None):
 
 
 
-__all__.append(r'enumerate_files')
 def enumerate_files(root, all=None, any=None, none=None, recursive=False, sort=True) -> List[pathlib.Path]:
 	'''
 	Collects all files in a directory matching some filename filters.
@@ -259,13 +284,11 @@ def enumerate_files(root, all=None, any=None, none=None, recursive=False, sort=T
 
 
 
-__all__.append(r'get_all_files')
-def get_all_files(path, all=None, any=None, recursive=False, sort=True)-> List[pathlib.Path]:
+def get_all_files(path, all=None, any=None, recursive=False, sort=True) -> List[pathlib.Path]:
 	return enumerate_files(path, all=all, any=any, recursive=recursive, sort=sort)
 
 
 
-__all__.append(r'enumerate_directories')
 def enumerate_directories(root, filter=None, recursive=False, sort=True) -> List[pathlib.Path]:
 	'''
 	Collects all subdirectories in a directory.
@@ -290,7 +313,6 @@ def enumerate_directories(root, filter=None, recursive=False, sort=True) -> List
 
 
 
-__all__.append(r'read_all_text_from_file')
 def read_all_text_from_file(path, fallback_url=None, encoding='utf-8', logger=None) -> str:
 	'''
 	Reads all the text from a file, optionally downloading it if the file did not exist on disk or a read error occured.
@@ -306,10 +328,7 @@ def read_all_text_from_file(path, fallback_url=None, encoding='utf-8', logger=No
 	except:
 		if fallback_url is not None:
 			_log(logger, rf"Couldn't read file locally, downloading from {fallback_url}")
-			response = requests.get(
-				fallback_url,
-				timeout=1
-			)
+			response = requests.get(fallback_url, timeout=1)
 			text = response.text
 			with open(path, 'w', encoding='utf-8', newline='\n') as f:
 				f.write(text)
@@ -319,7 +338,6 @@ def read_all_text_from_file(path, fallback_url=None, encoding='utf-8', logger=No
 
 
 
-__all__.append(r'run_python_script')
 def run_python_script(path, *args, cwd=None, check=True, **kwargs) -> subprocess.CompletedProcess:
 	'''
 	Invokes a python script as a subprocess.
@@ -328,12 +346,10 @@ def run_python_script(path, *args, cwd=None, check=True, **kwargs) -> subprocess
 	if not path.exists():
 		raise Exception(rf'{path} was not an existing directory or file')
 
-	return subprocess.run(
-		[_state().python, str(path)] + [arg for arg in args],
+	return subprocess.run([_state().python, str(path)] + [arg for arg in args],
 		check=check,
 		cwd=path.cwd() if cwd is None else cwd,
-		**kwargs
-	)
+		**kwargs)
 
 
 
@@ -349,7 +365,6 @@ def _do_hash(hasher, obj, *objs) -> str:
 
 
 
-__all__.append(r'sha1')
 def sha1(obj, *objs) -> str:
 	'''
 	Returns an SHA-1 hash of one or more objects.
@@ -358,7 +373,6 @@ def sha1(obj, *objs) -> str:
 
 
 
-__all__.append(r'sha256')
 def sha256(obj, *objs) -> str:
 	'''
 	Returns an SHA-256 hash of one or more objects.
@@ -367,7 +381,6 @@ def sha256(obj, *objs) -> str:
 
 
 
-__all__.append(r'is_pow2')
 def is_pow2(n) -> bool:
 	'''
 	Returns true if a positive integer is a power of two.
@@ -377,7 +390,6 @@ def is_pow2(n) -> bool:
 
 
 
-__all__.append(r'next_pow2')
 def next_pow2(n) -> int:
 	'''
 	Rounds an integer up to the next positive power of two.
@@ -393,7 +405,6 @@ def next_pow2(n) -> int:
 
 
 
-__all__.append(r'replace_metavar')
 def replace_metavar(name, repl, text) -> str:
 	'''
 	Replaces named meta variables in strings. Meta variables can be in any of the following formats:
@@ -432,20 +443,21 @@ def _tabify_replace_range(s, start, length, replacement) -> str:
 	assert isinstance(replacement, str)
 	assert start >= 0
 	assert length > 0
-	assert start+length <= len(s)
+	assert start + length <= len(s)
 	return rf'{s[:start]}{replacement}{s[start+length:]}'
+
+
 
 def _tabify_count_preceeding_spaces(s, start, tab_width) -> str:
 	spaces = 0
 	for i in range(tab_width):
-		if s[start-i-1] != ' ':
+		if s[start - i - 1] != ' ':
 			break
 		spaces += 1
 	return spaces
 
 
 
-__all__.append(r'tabify')
 def tabify(s, tab_width=4) -> str:
 	'''
 	Replaces spaces with tabs.
@@ -454,15 +466,14 @@ def tabify(s, tab_width=4) -> str:
 		s = str(s)
 	i = (len(s) - (len(s) % tab_width)) - tab_width
 	while i >= 0:
-		spaces = _tabify_count_preceeding_spaces(s, i+tab_width, tab_width)
+		spaces = _tabify_count_preceeding_spaces(s, i + tab_width, tab_width)
 		if spaces > 1:
-			s = _tabify_replace_range(s, i+(tab_width-spaces), spaces, '\t')
+			s = _tabify_replace_range(s, i + (tab_width - spaces), spaces, '\t')
 		i -= tab_width
 	return s
 
 
 
-__all__.append(r'untabify')
 def untabify(s, tab_width=4) -> str:
 	'''
 	Replaces tabs with spaces.
@@ -472,13 +483,12 @@ def untabify(s, tab_width=4) -> str:
 	i = s.find('\t')
 	while i != -1:
 		spaces = tab_width - (i % tab_width)
-		s = _tabify_replace_range(s, i, 1, ' '*spaces)
+		s = _tabify_replace_range(s, i, 1, ' ' * spaces)
 		i = s.find('\t', i + spaces - 1)
 	return s
 
 
 
-__all__.append(r'reindent')
 def reindent(s, indent='\t', tab_width=4) -> str:
 	'''
 	Re-indents a block of text.
@@ -493,7 +503,7 @@ def reindent(s, indent='\t', tab_width=4) -> str:
 	lstrip = 9999999999999999
 	s = [untabify(ss, tab_width) for ss in s.splitlines()]
 	for i in range(len(s)):
-		stripped = s[i].lstrip();
+		stripped = s[i].lstrip()
 		if not stripped:
 			s[i] = ''
 			continue

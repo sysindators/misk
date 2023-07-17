@@ -8,39 +8,42 @@
 # windows:
 # py setup.py sdist bdist_wheel && twine upload dist/* && rmdir /S /Q dist
 
-from setuptools import setup, find_packages
+import re
+
+from setuptools import find_packages, setup
 
 README = ''
-with open('README.md', encoding='utf-8') as file:
+with open(r'README.md', encoding=r'utf-8') as file:
 	README = file.read()
 
 CHANGELOG = ''
-with open('CHANGELOG.md', encoding='utf-8') as file:
-	CHANGELOG = file.read().strip()
+with open(r'CHANGELOG.md', encoding=r'utf-8') as file:
+	CHANGELOG = f'\n\n{file.read()}\n\n'
+CHANGELOG = re.sub(r'\n#+\s*Changelog\s*?\n', '\n## Changelog\n', CHANGELOG, flags=re.I).strip()
 
-setup_args = dict(
-	name=r'misk',
-	version=r'0.7.0',
-	description=r'Miscellaneous useful bits for python 3.',
-	long_description_content_type=r'text/markdown',
-	long_description=f'{README}\n\n{CHANGELOG}'.strip(),
-	license=r'MIT',
-	packages=find_packages(),
-	author=r'Mark Gillard',
-	author_email=r'mark.gillard@outlook.com.au',
-	keywords=['utilities'], # ???
-	url=r'https://github.com/marzer/misk',
-	download_url=r'https://pypi.org/project/misk/',
-	project_urls={
-		r'Source': r'https://github.com/marzer/misk',
-		r'Tracker': r'https://github.com/marzer/misk/issues'
+SETUP_ARGS = {
+	r'name': r'misk',
+	r'version': r'0.7.1',
+	r'description': r'Miscellaneous useful bits for python 3.',
+	r'long_description_content_type': r'text/markdown',
+	r'long_description': f'{README}\n<br><br>\n{CHANGELOG}'.strip(),
+	r'license': r'MIT',
+	r'packages': find_packages(),
+	r'author': r'Mark Gillard',
+	r'author_email': r'mark.gillard@outlook.com.au',
+	r'keywords': ['utilities'],  # ???
+	r'url': r'https://github.com/marzer/misk',
+	r'download_url': r'https://pypi.org/project/misk/',
+	r'project_urls': {
+	r'Source': r'https://github.com/marzer/misk',
+	r'Tracker': r'https://github.com/marzer/misk/issues'
 	},
-	python_requires=r'>=3'
-)
+	r'python_requires': r'>=3.7'
+}
 
-install_requires = None
-with open('requirements.txt', encoding='utf-8') as file:
-	install_requires = file.read().strip().split()
+REQUIRES = None
+with open(r'requirements.txt', encoding='utf-8') as file:
+	REQUIRES = file.read().strip().split()
 
 if __name__ == '__main__':
-	setup(**setup_args, install_requires=install_requires)
+	setup(**SETUP_ARGS, install_requires=REQUIRES)

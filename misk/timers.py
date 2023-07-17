@@ -5,15 +5,16 @@
 # SPDX-License-Identifier: MIT
 
 import time
-from . import functions as fn
 from datetime import timedelta
 
-__all__ = []
+from . import functions as fn
+
+__all__ = [r'ScopeTimer']
 
 
 
-__all__.append(r'ScopeTimer')
 class ScopeTimer(object):
+
 	'''
 	A utility class for scoped timing blocks of code using python's "with" keyword.
 	'''
@@ -28,8 +29,10 @@ class ScopeTimer(object):
 		if self.__print_start is not None and (not isinstance(self.__print_start, bool) or self.__print_start):
 			fn._log(self.__print_start, self.__description)
 
-	def __exit__(self ,type, value, traceback):
-		if traceback is not None or self.__print_end is None or (isinstance(self.__print_end, bool) and not self.__print_end):
+	def __exit__(self, type, value, traceback):
+		if traceback is not None or self.__print_end is None or (
+			isinstance(self.__print_end, bool) and not self.__print_end
+		):
 			return
 		nanos = time.perf_counter_ns() - self.__start
 		micros = int(nanos / 1000)
