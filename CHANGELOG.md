@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.8.0 - 2023-08-03
+
+-   Fixed `replace_metavar` erroneously treating `\` as regex escapes
+-   Added `repeat_pattern()`
+-   Added `reflow_text()`
+-   Added `to_snake_case()`
+-   Added `to_pascal_case()`
+-   Added `remove_duplicates()`
+
 ## v0.7.1 - 2023-07-17
 
 -   Fixed `copy_file()` not following symlinks

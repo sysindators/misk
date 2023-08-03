@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 import traceback
 from pathlib import Path
 from typing import List, Union
@@ -44,6 +45,11 @@ __all__ = [
 	r'tabify',
 	r'untabify',
 	r'reindent',
+	r'repeat_pattern',
+	r'reflow_text',
+	r'remove_duplicates',
+	r'to_snake_case',
+	r'to_pascal_case'
 ]
 
 #=======================================================================================================================
@@ -425,6 +431,7 @@ def replace_metavar(name, repl, text) -> str:
 	name = re.escape(name.strip())
 	if not isinstance(repl, str):
 		repl = str(repl)
+	repl = repl.replace('\\','\\\\')
 	if not isinstance(text, str):
 		text = str(text)
 
@@ -514,3 +521,69 @@ def reindent(s, indent='\t', tab_width=4) -> str:
 			s[i] = tabify(indent + s[i][lstrip:], tab_width=tab_width)
 
 	return '\n'.join(s)
+
+
+
+def repeat_pattern(pattern: str, length: int) -> str:
+	'''
+	Repeats a string pattern up to a specific length.
+	'''
+	if len(pattern) == 1:
+		return pattern * length
+	text = ''
+	for i in range(length):
+		text = text + pattern[i % len(pattern)]
+	return text
+
+
+
+def reflow_text(text: str, line_length=120, tab_size=4) -> str:
+	'''
+	Re-wraps text over lines of a particular length.
+	'''
+	text = text.replace('\n\n', '\b')
+	text = text.replace('\n', ' ')
+	text = text.replace('\b', '\n')
+	text = text.split('\n')
+	for i in range(len(text)):
+		text[i] = '\n'.join(textwrap.wrap(text[i], width=int(line_length), tabsize=int(tab_size)))
+	return '\n\n'.join(text)
+
+
+
+def remove_duplicates(vals: list) -> list:
+	'''
+	Removes duplicate items from a list while preserving order.
+	'''
+	new_vals = []
+	for v in coerce_collection(vals):
+		if v not in new_vals:
+			new_vals.append(v)
+	return new_vals
+
+
+
+def to_snake_case(s: str) -> str:
+	'''
+	Converts text to snake_case.
+	'''
+	s = str(s)
+	s = s.strip()
+	s = re.sub('(?:\s|-)+', '_', s)
+	s = re.sub('__+', '_', s)
+	s = re.sub('([a-z])([A-Z])', lambda m: m[1] + '_' + m[2].lower(), s)
+	s = s.lower()
+	return s
+
+
+
+def to_pascal_case(s: str) -> str:
+	'''
+	Converts text to PascalCase.
+	'''
+	s = to_snake_case(s)
+	s = re.sub('_([a-z])', lambda m: m[1].upper(), s)
+	s = s.strip('_')
+	if len(s):
+		s = s[:1].upper() + s[1:]
+	return s

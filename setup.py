@@ -23,7 +23,7 @@ CHANGELOG = re.sub(r'\n#+\s*Changelog\s*?\n', '\n## Changelog\n', CHANGELOG, fla
 
 SETUP_ARGS = {
 	r'name': r'misk',
-	r'version': r'0.7.1',
+	r'version': r'0.8.1',
 	r'description': r'Miscellaneous useful bits for python 3.',
 	r'long_description_content_type': r'text/markdown',
 	r'long_description': f'{README}\n<br><br>\n{CHANGELOG}'.strip(),
